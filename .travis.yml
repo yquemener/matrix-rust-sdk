@@ -11,6 +11,9 @@ jobs:
       dist: bionic
 
     - os: osx
+    - os: osx
+      name: macOS 10.15
+      osx_image: xcode12
     - os: linux
       name: Coverage
       before_script:
