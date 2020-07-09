@@ -458,6 +458,20 @@ impl BaseClient {
     /// * `session` - An session that the user already has from a
     /// previous login call.
     pub async fn restore_login(&self, session: Session) -> Result<()> {
+        // If there wasn't a state store opened, try to open the default one if
+        // a store path was provided.
+        if self.state_store.read().await.is_none() {
+            #[cfg(not(target_arch = "wasm32"))]
+            {
+                if let Some(path) = &*self.store_path {
+                    let store = JsonStore::open(path)?;
+                    *self.state_store.write().await = Some(Box::new(store));
+                }
+            }
+        }
+
+        self.sync_with_state_store(&session).await?;
+
         #[cfg(feature = "encryption")]
         {
             let mut olm = self.olm.lock().await;
@@ -495,20 +509,6 @@ impl BaseClient {
                 *olm = Some(OlmMachine::new(&session.user_id, &session.device_id));
             }
         }
-
-        // If there wasn't a state store opened, try to open the default one if
-        // a store path was provided.
-        if self.state_store.read().await.is_none() {
-            #[cfg(not(target_arch = "wasm32"))]
-            {
-                if let Some(path) = &*self.store_path {
-                    let store = JsonStore::open(path)?;
-                    *self.state_store.write().await = Some(Box::new(store));
-                }
-            }
-        }
-
-        self.sync_with_state_store(&session).await?;
 
         *self.session.write().await = Some(session);
 
@@ -990,21 +990,6 @@ impl BaseClient {
                 self.get_or_create_joined_room(&room_id).await?.clone()
             };
 
-            #[cfg(feature = "encryption")]
-            {
-                let mut olm = self.olm.lock().await;
-
-                if let Some(o) = &mut *olm {
-                    let room = matrix_room.read().await;
-
-                    // If the room is encrypted, update the tracked users.
-                    if room.is_encrypted() {
-                        o.update_tracked_users(room.joined_members.keys()).await;
-                        o.update_tracked_users(room.invited_members.keys()).await;
-                    }
-                }
-            }
-
             // RoomSummary contains information for calculating room name.
             matrix_room
                 .write()
@@ -1039,6 +1024,21 @@ impl BaseClient {
                 } else {
                     self.emit_unrecognized_event(&room_id, &event, RoomStateType::Joined)
                         .await;
+                }
+            }
+
+            #[cfg(feature = "encryption")]
+            {
+                let mut olm = self.olm.lock().await;
+
+                if let Some(o) = &mut *olm {
+                    let room = matrix_room.read().await;
+
+                    // If the room is encrypted, update the tracked users.
+                    if room.is_encrypted() {
+                        o.update_tracked_users(room.joined_members.keys()).await;
+                        o.update_tracked_users(room.invited_members.keys()).await;
+                    }
                 }
             }
 

@@ -6,14 +6,31 @@ addons:
       - libssl-dev
 
 jobs:
-  include:
+  allow_failures:
+    - os: windows
     - os: linux
+      name: wasm32-unknown-unknown
+
+  include:
+    - stage: Lint
+      os: linux
+      before_script:
+        - rustup component add rustfmt
+      script:
+        - cargo fmt --all -- --check
+
+    - stage: Test
+      os: linux
       dist: bionic
 
+    - os: windows
+
     - os: osx
+
     - os: osx
       name: macOS 10.15
       osx_image: xcode12
+
     - os: linux
       name: Coverage
       before_script:
@@ -45,12 +62,6 @@ jobs:
             cd matrix_sdk_base
             cargo test --target wasm32-unknown-unknown --no-default-features
 
-
-
-before_script:
-  - rustup component add rustfmt
-
 script:
-  - cargo fmt --all -- --check
   - cargo build
   - cargo test
