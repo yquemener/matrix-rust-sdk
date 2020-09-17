@@ -29,11 +29,6 @@ jobs:
       os: linux
 
     - os: windows
-      script:
-          - cd matrix_sdk
-          - cargo test --no-default-features --features "messages, native-tls"
-          - cd ../matrix_sdk_base
-          - cargo test --no-default-features --features "messages"
 
     - os: osx
 
