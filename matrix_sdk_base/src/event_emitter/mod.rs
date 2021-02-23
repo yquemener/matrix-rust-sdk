@@ -71,7 +71,12 @@ impl Emitter {
     }
 
     pub(crate) async fn emit_sync(&self, response: &SyncResponse) {
+        // println!("Emitter::emit_sync response = {:#?}", response);
+        // println!("Emitter::emit_sync response.presence {:#?}", response.presence);
+        // println!("Emitter::emit_sync response.presence.events {:#?}", response.presence.events);
+        println!("{}", line!());
         for (room_id, room_info) in &response.rooms.join {
+            println!("{}", line!());
             if let Some(room) = self.get_room(room_id) {
                 for event in &room_info.ephemeral.events {
                     self.emit_ephemeral_event(room.clone(), event).await;
@@ -90,8 +95,9 @@ impl Emitter {
                 }
             }
         }
-
+        println!("{}", line!());
         for (room_id, room_info) in &response.rooms.leave {
+            println!("{}", line!());
             if let Some(room) = self.get_room(room_id) {
                 for event in &room_info.account_data.events {
                     self.emit_account_data_event(room.clone(), event).await;
@@ -106,16 +112,21 @@ impl Emitter {
                 }
             }
         }
-
+        println!("{}", line!());
         for (room_id, room_info) in &response.rooms.invite {
+            println!("{}", line!());
             if let Some(room) = self.get_room(room_id) {
                 for event in &room_info.invite_state.events {
+                    println!("{}", line!());
                     self.emit_stripped_state_event(room.clone(), event).await;
+                    println!("{}", line!());
                 }
             }
         }
-
+        println!("{}", line!());
         for event in &response.presence.events {
+            println!("{}", line!());
+            println!("Presence event");
             self.on_presence_event(event).await;
         }
     }
@@ -138,7 +149,7 @@ impl Emitter {
                 }
                 _ => {}
             },
-            AnySyncRoomEvent::Message(event) => match event {
+            AnySyncRoomEvent::Message(event) => {println!("emit_timeline_event {:?}", event); match event {
                 AnySyncMessageEvent::RoomMessage(e) => self.on_room_message(room, e).await,
                 AnySyncMessageEvent::RoomMessageFeedback(e) => {
                     self.on_room_message_feedback(room, e).await
@@ -154,7 +165,7 @@ impl Emitter {
                 }
                 AnySyncMessageEvent::CallHangup(e) => self.on_room_call_hangup(room, e).await,
                 _ => {}
-            },
+            }},
             AnySyncRoomEvent::RedactedState(_event) => {}
             AnySyncRoomEvent::RedactedMessage(_event) => {}
         }
@@ -191,29 +202,42 @@ impl Emitter {
         room: RoomState,
         event: &AnyStrippedStateEvent,
     ) {
+        println!("{} {}", file!(), line!());
         match event {
             AnyStrippedStateEvent::RoomMember(member) => {
-                self.on_stripped_state_member(room, &member, None).await
+                println!("{} {}", file!(), line!());
+                self.on_stripped_state_member(room, &member, None).await;
+                println!("{} {}", file!(), line!());
             }
-            AnyStrippedStateEvent::RoomName(name) => self.on_stripped_state_name(room, &name).await,
+            AnyStrippedStateEvent::RoomName(name) => {
+                println!("{} {}", file!(), line!());
+                self.on_stripped_state_name(room, &name).await;
+                println!("{} {}", file!(), line!());
+            },
             AnyStrippedStateEvent::RoomCanonicalAlias(canonical) => {
+                println!("{} {}", file!(), line!());
                 self.on_stripped_state_canonical_alias(room, &canonical)
                     .await
             }
             AnyStrippedStateEvent::RoomAliases(aliases) => {
+                println!("{} {}", file!(), line!());
                 self.on_stripped_state_aliases(room, &aliases).await
             }
             AnyStrippedStateEvent::RoomAvatar(avatar) => {
+                println!("{} {}", file!(), line!());
                 self.on_stripped_state_avatar(room, &avatar).await
             }
             AnyStrippedStateEvent::RoomPowerLevels(power) => {
+                println!("{} {}", file!(), line!());
                 self.on_stripped_state_power_levels(room, &power).await
             }
             AnyStrippedStateEvent::RoomJoinRules(rules) => {
+                println!("{} {}", file!(), line!());
                 self.on_stripped_state_join_rules(room, &rules).await
             }
-            _ => {}
+            _ => {println!("{} {}", file!(), line!());}
         }
+        println!("{} {}", file!(), line!());
     }
 
     pub(crate) async fn emit_account_data_event(&self, room: RoomState, event: &AnyBasicEvent) {
