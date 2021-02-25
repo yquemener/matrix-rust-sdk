@@ -1754,9 +1754,7 @@ impl Client {
 
         loop {
             let filter = sync_settings.filter.clone();
-            println!("syncing once");
             let response = self.sync_once(sync_settings.clone()).await;
-            println!("syncing responded");
 
             let response = match response {
                 Ok(r) => r,
@@ -1766,10 +1764,8 @@ impl Client {
                     continue;
                 }
             };
-            println!("line {}", line!());
             #[cfg(feature = "encryption")]
             {
-                println!("line {}", line!());
                 // This is needed because sometimes we need to automatically
                 // claim some one-time keys to unwedge an exisitng Olm session.
                 if let Err(e) = self.claim_one_time_keys([].iter()).await {
@@ -1819,17 +1815,13 @@ impl Client {
                         }
                     }
                 }
-                println!("line {}", line!());
             }
 
-            println!("line {}", line!());
             if callback(response).await == LoopCtrl::Break {
-                println!("line {}", line!());
                 return;
             }
 
             let now = Instant::now();
-            println!("line {}", line!());
             // If the last sync happened less than a second ago, sleep for a
             // while to not hammer out requests if the server doesn't respect
             // the sync timeout.
@@ -1838,9 +1830,7 @@ impl Client {
                     sleep::new(Duration::from_secs(1)).await;
                 }
             }
-            println!("line {}", line!());
             last_sync_time = Some(now);
-            println!("line {}", line!());
             sync_settings = SyncSettings::new().timeout(DEFAULT_SYNC_TIMEOUT).token(
                 self.sync_token()
                     .await
@@ -1848,11 +1838,8 @@ impl Client {
             );
             if let Some(f) = filter {
                 sync_settings = sync_settings.filter(f);
-                println!("line {}", line!());
             }
-            println!("line {}", line!());
         }
-        println!("line {}", line!());
     }
 
     /// Claim one-time keys creating new Olm sessions.

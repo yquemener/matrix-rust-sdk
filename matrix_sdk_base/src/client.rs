@@ -943,11 +943,8 @@ impl BaseClient {
         };
 
         if let Some(emitter) = self.event_emitter.read().await.as_ref() {
-            println!("{} {}", file!(), line!());
             emitter.emit_sync(&response).await;
-            println!("{} {}", file!(), line!());
         }
-        println!("{} {}", file!(), line!());
         Ok(response)
     }
 
