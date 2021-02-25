@@ -257,7 +257,7 @@ async fn send_request(
 ) -> Result<http::Response<Vec<u8>>, HttpError> {
     let backoff = ExponentialBackoff::default();
     let mut request = reqwest::Request::try_from(request)?;
-
+    // FIXME: timeout are not taken into account when retrying. Disabling it on server errors for now
     if let Some(timeout) = timeout {
         *request.timeout_mut() = Some(timeout);
     }
@@ -276,7 +276,9 @@ async fn send_request(
         // TODO TOO_MANY_REQUESTS will have a retry timeout which we should
         // use.
         if status_code.is_server_error() || response.status() == StatusCode::TOO_MANY_REQUESTS {
-            return Err(RetryError::Transient(HttpError::Server(status_code)));
+            // FIXME
+            // return Err(RetryError::Transient(HttpError::Server(status_code)));
+            return Err(RetryError::Permanent(HttpError::Server(status_code)));
         }
 
         let response = response_to_http_response(response)
