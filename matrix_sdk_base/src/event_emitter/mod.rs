@@ -29,6 +29,7 @@ use crate::{
         ignored_user_list::IgnoredUserListEventContent,
         presence::PresenceEvent,
         push_rules::PushRulesEventContent,
+        reaction::{ReactionEvent, ReactionEventContent},
         receipt::ReceiptEventContent,
         room::{
             aliases::AliasesEventContent,
@@ -71,9 +72,6 @@ impl Emitter {
     }
 
     pub(crate) async fn emit_sync(&self, response: &SyncResponse) {
-        // println!("Emitter::emit_sync response = {:#?}", response);
-        // println!("Emitter::emit_sync response.presence {:#?}", response.presence);
-        // println!("Emitter::emit_sync response.presence.events {:#?}", response.presence.events);
         for (room_id, room_info) in &response.rooms.join {
             if let Some(room) = self.get_room(room_id) {
                 for event in &room_info.ephemeral.events {
@@ -153,6 +151,7 @@ impl Emitter {
                     self.on_room_call_candidates(room, e).await
                 }
                 AnySyncMessageEvent::CallHangup(e) => self.on_room_call_hangup(room, e).await,
+                AnySyncMessageEvent::Reaction(e) => self.on_message_reaction(room, e).await,
                 _ => {}
             }},
             AnySyncRoomEvent::RedactedState(_event) => {}
@@ -485,6 +484,9 @@ pub trait EventEmitter: Send + Sync {
     /// The only guarantee this method can give about the event is that it is in the
     /// shape of a valid matrix event.
     async fn on_custom_event(&self, _: RoomState, _: &CustomEvent<'_>) {}
+
+    /// Fires when `Client` receives a `Reaction` event.
+    async fn on_message_reaction(&self, _:RoomState, _:&SyncMessageEvent<ReactionEventContent>) {}
 }
 
 #[cfg(test)]
